@@ -1,31 +1,43 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Se Define la función real ln(x)
-def ln_x(x):
-    return np.log(x)
+# Datos del préstamo
+prestamo_inicial = 50_000_000  # 50 millones
+tasa_anual = 0.18  # 18%
+tasa_mensual = tasa_anual / 12  # Tasa de interés mensual
+periodos = 12  # Número de meses
 
-# Se Define la aproximación de la serie de Taylor de ln(x) en x=1 hasta el término cúbico
-def taylor_ln_x(x):
-    return (x - 1) - (x - 1)**2 / 2 + (x - 1)**3 / 3
+# Cálculo de la cuota fija mensual (fórmula de anualidades)
+cuota_mensual = (prestamo_inicial * tasa_mensual) / (1 - (1 + tasa_mensual) ** -periodos)
 
-# Rango de valores de x
-x = np.linspace(0.1, 2, 400)  # Evitamos x=0 por la singularidad de ln(x)
-y_ln = ln_x(x)
-y_taylor = taylor_ln_x(x)
+# Datos de ingresos y egresos (tomados de la tabla inicial y ajustados)
+egresos = [
+    2_442_166.57, 2_204_166.57, 2_204_166.57, 22_369_166.57, 2_569_166.57, 2_569_166.57, 2_569_166.57, 
+    569_166.57, 569_166.57, 569_166.57, 569_166.57, 569_166.57
+]
 
-# Se Grafica
-plt.figure(figsize=(8, 5))
-plt.plot(x, y_ln, label=r'$\ln(x)$', color='blue', linewidth=2)
-plt.plot(x, y_taylor, label=r'Aprox. Taylor ($3^\text{er}$ orden)', color='red', linestyle='dashed', linewidth=2)
-plt.axvline(x=1, color='gray', linestyle='dotted', linewidth=1)  # Línea en x=1 (punto de expansión)
-plt.axhline(y=0, color='black', linewidth=1)  # Eje x
-plt.axvline(x=0, color='black', linewidth=1)  # Eje y
+# Ingresos (cambiando los signos de los valores negativos de la tabla)
+ingresos = [-val for val in egresos]
 
-# Etiquetas y leyenda
-plt.xlabel('x')
-plt.ylabel('f(x)')
-plt.title('Aproximación de Taylor de ln(x) en x=1')
-plt.legend()
-plt.grid(True)
+# Crear gráfico
+meses = np.arange(len(egresos))
+
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.bar(meses, ingresos, color='darkgreen', label="Ingresos")
+ax.bar(meses, egresos, color='lightgreen', label="Egresos")
+
+# Añadir etiquetas
+ax.set_xticks(meses)
+ax.set_xticklabels(meses + 1)
+ax.set_xlabel("Mes")
+ax.set_ylabel("Valor ($)")
+ax.set_title("Flujo de caja mensual con préstamo de 50M y 18% anual")
+ax.legend()
+
+# Mostrar valores en las barras
+for i in range(len(meses)):
+    ax.text(meses[i], ingresos[i] + 100_000, f"{ingresos[i]:,.0f}", ha='center', fontsize=8, color='black')
+    ax.text(meses[i], egresos[i] - 100_000, f"{egresos[i]:,.0f}", ha='center', fontsize=8, color='black')
+
+plt.grid(axis='y', linestyle='-', alpha=0.7)
 plt.show()
