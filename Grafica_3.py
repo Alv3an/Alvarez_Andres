@@ -2,16 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Datos (incluyendo monto inicial)
-monto_inicial = 59956087  # Egreso en t=0
+monto_inicial = 40000000  # Egreso en t=0
 egresos = np.array([
-    6493621.46, 6205621.46, 6205621.46, 26320621.46,
-    6570621.46, 6570621.46, 6570621.46, 2716301.58,
-    2716301.58, 2716301.58, 2716301.58, 4616301.58
+    21879746.57, 1711752.57, 2037018.57, 1857892.57, 2038744.57, 1973526.57,
+    1773976.57, 1704434.57, 1839012.57, 2011062.57, 1814066.57, 1786660.57
 ])
 ingresos = np.array([
-    1, 1, 1, 1,
-    1, 1, 1, 2000000,
-    2000000, 2000000, 2000000, 2000000
+    3250000, 2500000, 2000000, 2750000, 2250000, 5000000,
+    3500000, 6250000, 3500000, 6000000, 3750000, 5500000
 ])
 
 # Parámetros financieros
@@ -25,43 +23,60 @@ vpn = -monto_inicial + sum(flujos_netos[t] / (1 + i)**(t + 1) for t in range(n))
 # Cálculo de la serie uniforme equivalente (A)
 A = vpn * (i * (1 + i)**n) / ((1 + i)**n - 1)
 
+# Configuración del gráfico con tamaño optimizado
+plt.figure(figsize=(15, 8))
+
 # Crear arrays para el gráfico
-meses = np.arange(0, 13)  # Mes 1 a 12
-# serie_uniforme = np.full(13, A)  # Aplicamos A desde Mes 1 (opcional: Mes 0 puede ser 0)
+meses = np.arange(0, 13)  # Mes 0 a 12
 
-# Gráfico comparativo
-fig, ax = plt.subplots(figsize=(14, 7))
-
-# --- Barras de Egresos/Ingresos originales (solo para referencia) ---
-
+# --- Barras de Egresos/Ingresos originales ---
 # Egresos mensuales (Meses 1-12)
-ax.bar(meses[1:], -11500000, color='salmon', alpha=0.3, label='Egresos Mensuales (Original)', width=0.4)
+bar_egresos = plt.bar(meses[1:], -A/1e5, color='limegreen', alpha=0.7, label='Egresos', width=0.4)
 # Ingresos mensuales (Meses 1-12)
-ax.bar(meses[1:], 11500000, color='limegreen', alpha=0.3, label='Ingresos Mensuales (Original)', width=0.4)
+bar_ingresos = plt.bar(meses[1:], A/1e5, color='salmon', alpha=0.7, label='Ingresos', width=0.4)
 
-#gresos mensuales
-for i in range(1, 13):
-    if egresos[i-1] != 0:
-        ax.text(i, -11500000 - 1e6, f'{-11500000/1e6:,.1f}M', ha='center', va='top', fontsize=7, color='darkred')
-# Ingresos mensuales
-for i in range(1, 13):
-    if ingresos[i-1] != 0:
-        ax.text(i, 11500000 + 1e5, f'{11500000/1e6:,.1f}M', ha='center', va='bottom', fontsize=7, color='darkgreen')
+# # --- Serie uniforme ---
+# linea_serie = plt.axhline(y=A/1e6, color='blue', linestyle='--', linewidth=2, 
+#                          label=f'Serie Uniforme (A = {A/1e6:,.2f} M)')
+
+# --- Inversión inicial ---
+# bar_inicial = plt.bar(0, -monto_inicial/1e6, color='darkred', label='Inversión Inicial', width=0.4)
+
+# Añadir etiquetas de valor
+for bar in bar_egresos:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2., height-0.5,
+             f'{height:,.1f}',
+             ha='center', va='top', color='white', fontsize=8)
+
+for bar in bar_ingresos:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2., height+0.5,
+             f'{height:,.1f}',
+             ha='center', va='bottom', color='darkgreen', fontsize=8)
+
+# Etiqueta para inversión inicial
+plt.text(0, -monto_inicial/1e6-1, f'{-monto_inicial/1e6:,.1f}',
+         ha='center', va='top', color='white', fontsize=8)
 
 # Línea de referencia y=0
-ax.axhline(0, color='black', linewidth=0.8)
+plt.axhline(0, color='black', linewidth=0.8)
 
 # Ajustes estéticos
-ax.set_title('Serie Uniforme Equivalente', fontsize=14, pad=20)
-ax.set_xlabel('Mes', fontsize=12)
-ax.set_ylabel('Monto (Millones $)', fontsize=12)
-ax.set_xticks(meses)
-ax.set_xticklabels([f'Mes {m}' for m in meses], rotation=45)
-ax.grid(True, linestyle='--', alpha=0.6)
-ax.legend(loc='upper right')
+plt.title('Serie Uniforme', fontsize=14, pad=20)
+plt.xlabel('Mes', fontsize=12)
+plt.ylabel('Millones de $', fontsize=12)
+plt.xticks(meses, [f'Mes {m}' for m in meses], rotation=45)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
 
-# Ajustar límites del eje Y
-ax.set_ylim(min(-egresos.min(), A * 1.5) if A < 0 else ax.set_ylim(-monto_inicial * 0.1, max(ingresos.max(), A) * 1.5))
+# Ajustar límites del eje Y automáticamente
+max_val = max(max(ingresos/1e6), max(abs(egresos/1e6)), abs(A/1e6), abs(monto_inicial/1e6)) * 1.2
+plt.ylim(-max_val, max_val)
 
+# Mostrar el gráfico
 plt.tight_layout()
 plt.show()
+
+print(f"Valor Presente Neto (VPN): {vpn:,.2f}")
+print(f"Serie Uniforme Equivalente (A): {A:,.2f}")

@@ -1,75 +1,52 @@
-import numpy as np
 import matplotlib.pyplot as plt
 
-# Datos ajustados (incluyendo Mes 0)
-monto_inicial = 59956087  # Positivo para graficar como egreso (lo convertiremos a negativo)
-egresos = np.array([
-    6493621.46, 6205621.46, 6205621.46, 26320621.46,
-    6570621.46, 6570621.46, 6570621.46, 2716301.58,
-    2716301.58, 2716301.58, 2716301.58, 4616301.58
-])
-ingresos = np.array([
-    0, 0, 0, 0,
-    0, 0, 0, 2000000,
-    2000000, 2000000, 2000000, 2000000
-])
+# Datos
+monto_inicial = 40000000
+meses = [
+    "Mes 01", "Mes 02", "Mes 03", "Mes 04", "Mes 05", "Mes 06",
+    "Mes 07", "Mes 08", "Mes 09", "Mes 10", "Mes 11", "Mes 12"
+]
+ingresos = [
+    3250000, 2500000, 2000000, 2750000, 2250000, 5000000,
+    3500000, 6250000, 3500000, 6000000, 3750000, 5500000
+]
+egresos = [
+    21879746.57, 1711752.57, 2037018.57, 1857892.57, 2038744.57, 1973526.57,
+    1773976.57, 1704434.57, 1839012.57, 2011062.57, 1814066.57, 1786660.57
+]
+
+# Flujo neto promedio mensual
+flujo_prom = sum([(ing - egr) for ing, egr in zip(ingresos, egresos)]) / 12
 
 # Parámetros financieros
-i = 0.015  # Tasa mensual
-n = 12     # Número de meses
+i = 0.015  # Tasa de interés mensual
+n = 12    # Número de meses
 
-# Meses (0 a 12)
-meses = np.arange(0, 13)  # Mes 0: Inversión inicial; Meses 1-12: flujos mensuales
+# Cálculo de serie uniforme
+def calcular_serie_uniforme(VP, i, n):
+    return VP * (i * (1 + i)**n) / ((1 + i)**n - 1)
 
-# Cálculo del VPN (incluyendo monto inicial)
-flujos_netos = ingresos - egresos
-vpn = -monto_inicial + sum(flujos_netos[t] / (1 + i)**(t + 1) for t in range(n))
+R = calcular_serie_uniforme(monto_inicial, i, n)
 
-# Cálculo de la serie uniforme equivalente (A)
-A = vpn * (i * (1 + i)**n) / ((1 + i)**n - 1)
+# Resultados
+print(f"Flujo neto promedio mensual: ${flujo_prom:,.2f}")
+print(f"Serie uniforme equivalente (R): ${R:,.2f} durante {n} meses a una tasa del {i*100:.2f}% mensual")
 
-# Configuración del gráfico
-fig, ax = plt.subplots(figsize=(14, 7))
+# Crear gráfica
+plt.figure(figsize=(12, 6))
+plt.bar(meses, ingresos, label="Ingresos", color="green")
+plt.bar(meses, [-e for e in egresos], label="Egresos", color="red")
 
-# --- Barras de Egresos (rojas, hacia abajo) ---
-# Egreso inicial (Mes 0)
-ax.bar(0, -monto_inicial, color='tomato', label='Egreso Inicial (Mes 0)', width=0.6)
-# Egresos mensuales (Meses 1-12)
-ax.bar(meses[1:], -egresos, color='salmon', label='Egresos Mensuales', width=0.6)
+# Agregar línea de serie uniforme
+# plt.plot(meses, [R] * 12, label=f"Serie Uniforme (${R:,.0f})", color="blue", linestyle='--', linewidth=2)
 
-# --- Barras de Ingresos (verdes, hacia arriba) ---
-ax.bar(meses[1:], ingresos, color='limegreen', label='Ingresos Mensuales', width=0.6)
+# Ajustes estéticos
+plt.axhline(0, color='black', linewidth=0.8)
+plt.title("Comparación de Ingresos, Egresos y Serie Uniforme")
+plt.ylabel("Monto en Pesos ($)")
+plt.legend()
+plt.grid(True, axis='y', linestyle='--', alpha=0.7)
 
-# Línea de referencia y=0
-ax.axhline(0, color='black', linewidth=0.8)
-
-# --- Etiquetas de valores ---
-# Monto inicial (Mes 0)
-ax.text(0, -monto_inicial - 3e6, f'{-monto_inicial/1e6:,.1f}M', ha='center', va='top', fontsize=8, color='darkred')
-# Egresos mensuales
-for i in range(1, 13):
-    if egresos[i-1] != 0:
-        ax.text(i, -egresos[i-1] - 1e6, f'{-egresos[i-1]/1e6:,.1f}M', ha='center', va='top', fontsize=7, color='darkred')
-# Ingresos mensuales
-for i in range(1, 13):
-    if ingresos[i-1] != 0:
-        ax.text(i, ingresos[i-1] + 1e6, f'{ingresos[i-1]/1e6:,.1f}M', ha='center', va='bottom', fontsize=7, color='darkgreen')
-
-# A = -1701302  # Ejemplo (recalcula con el VPN correcto)
-ax.axhline(A, color='blue', linestyle='--', label=f'Serie Uniforme Equivalente (A = {A/1e6:,.1f}M)')
-ax.legend(loc='upper right')
-
-# --- Ajustes estéticos ---
-ax.set_title('Flujo de Caja Completo: Inversión Inicial + Egresos/Ingresos Mensuales', fontsize=14, pad=20)
-ax.set_xlabel('Mes', fontsize=12)
-ax.set_ylabel('Monto (Millones $)', fontsize=12)
-ax.set_xticks(meses)
-ax.set_xticklabels([f'Mes {m}' for m in meses], rotation=45)
-ax.grid(True, linestyle='--', alpha=0.6)
-ax.legend(loc='upper right')
-
-# Ajustar límites del eje Y para mejor visualización
-ax.set_ylim(-monto_inicial * 1.1, max(ingresos) * 1.5)
-
+# Mostrar
 plt.tight_layout()
 plt.show()
